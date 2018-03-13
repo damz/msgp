@@ -1,8 +1,10 @@
 package gen
 
 import (
+	"fmt"
 	"io"
 	"strconv"
+	"strings"
 )
 
 func decode(w io.Writer) *decodeGen {
@@ -94,9 +96,13 @@ func (d *decodeGen) structAsMap(s *Struct) {
 
 	d.p.printf("\nfor %s > 0 {\n%s--", sz, sz)
 	d.assignAndCheck("field", mapKey)
-	d.p.print("\nswitch msgp.UnsafeString(field) {")
+	d.p.print("\nswitch {")
 	for i := range s.Fields {
-		d.p.printf("\ncase \"%s\":", s.Fields[i].FieldTag)
+		var parts []string
+		for idx, c := range []byte(s.Fields[i].FieldTag) {
+			parts = append(parts, fmt.Sprintf("field[%d] == %d", idx, c))
+		}
+		d.p.printf("\ncase len(field) == %d && %s:", len(s.Fields[i].FieldTag), strings.Join(parts, " && "))
 		next(d, s.Fields[i].FieldElem)
 		if !d.p.ok() {
 			return

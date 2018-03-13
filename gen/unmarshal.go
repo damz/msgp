@@ -3,6 +3,8 @@ package gen
 import (
 	"io"
 	"strconv"
+	"fmt"
+	"strings"
 )
 
 func unmarshal(w io.Writer) *unmarshalGen {
@@ -95,12 +97,17 @@ func (u *unmarshalGen) mapstruct(s *Struct) {
 	u.p.printf("\nfor %s > 0 {", sz)
 	u.p.printf("\n%s--; field, bts, err = msgp.ReadMapKeyZC(bts)", sz)
 	u.p.print(errcheck)
-	u.p.print("\nswitch msgp.UnsafeString(field) {")
+	u.p.print("\nswitch {")
 	for i := range s.Fields {
 		if !u.p.ok() {
 			return
 		}
-		u.p.printf("\ncase \"%s\":", s.Fields[i].FieldTag)
+
+		var parts []string
+		for idx, c := range []byte(s.Fields[i].FieldTag) {
+			parts = append(parts, fmt.Sprintf("field[%d] == %d", idx, c))
+		}
+		u.p.printf("\ncase len(field) == %d && %s:", len(s.Fields[i].FieldTag), strings.Join(parts, " && "))
 		next(u, s.Fields[i].FieldElem)
 	}
 	u.p.print("\ndefault:\nbts, err = msgp.Skip(bts)")
