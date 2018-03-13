@@ -26,7 +26,7 @@ import (
 
 // this is an approximate measure
 // of the number of children in a node
-const maxComplex = 5
+const maxComplex = -100
 
 // begin recursive search for identities with the
 // given name and replace them with be
